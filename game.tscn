@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3 uid="uid://d0x6vqps3uwcf"]
+
+[ext_resource type="FontFile" uid="uid://uvgcopvqiopp" path="res://nasin-nanpa.otf" id="1_80nbo"]
+[ext_resource type="Script" uid="uid://cgg3co31uv54k" path="res://game.gd" id="1_e2o6t"]
+
+[node name="Node2D" type="Node2D"]
+script = ExtResource("1_e2o6t")
+
+[node name="Map" type="Label" parent="."]
+offset_right = 1153.0
+offset_bottom = 645.0
+theme_override_constants/line_spacing = -24
+theme_override_fonts/font = ExtResource("1_80nbo")
+theme_override_font_sizes/font_size = 64
+text = "sinalukintawasitelennilasinaponatawami
+wilemilasinapilinponaa"
+
+[node name="Camera" type="Camera2D" parent="."]
