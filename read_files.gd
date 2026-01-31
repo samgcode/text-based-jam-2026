@@ -71,8 +71,6 @@ func load_map(path: String) -> Dictionary:
 			map_data["dialog"][current_dialog].append(line)
 		else:
 			error("no handling for line", i)
-	
-	print(map_data)
 	return map_data
 
 # https://regexr.com/ (use PCRE engine)

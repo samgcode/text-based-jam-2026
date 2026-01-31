@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://d0x6vqps3uwcf"]
+[gd_scene load_steps=4 format=3 uid="uid://d0x6vqps3uwcf"]
 
 [ext_resource type="FontFile" uid="uid://uvgcopvqiopp" path="res://nasin-nanpa.otf" id="1_80nbo"]
 [ext_resource type="Script" uid="uid://cgg3co31uv54k" path="res://game.gd" id="1_e2o6t"]
+[ext_resource type="Texture2D" uid="uid://5hd5f4qqdnl2" path="res://square.png" id="3_feb5d"]
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource("1_e2o6t")
@@ -39,3 +40,26 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Camera" type="Camera2D" parent="."]
+
+[node name="DialogBox" type="Node2D" parent="."]
+
+[node name="Background" type="Sprite2D" parent="DialogBox"]
+modulate = Color(0, 0, 0, 1)
+scale = Vector2(800, 200)
+texture = ExtResource("3_feb5d")
+
+[node name="Dialog" type="Label" parent="DialogBox"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -128.0
+offset_top = -44.5
+offset_right = 128.0
+offset_bottom = 44.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("1_80nbo")
+theme_override_font_sizes/font_size = 64
+text = "soweli:|toki||a|"

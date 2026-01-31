@@ -22,10 +22,15 @@ var map_width;
 
 var player;
 var collidable;
+var interactable;
+var dialogs;
 
-var player_pos: Vector2 = Vector2(2, 2)
-var camera_target: Vector2 = Vector2(128, 128)
-var facing_dir: Vector2 = Vector2(0, 0)
+var player_pos = Vector2(2, 2)
+var camera_target = Vector2(128, 128)
+var facing_dir = Vector2(0, 0)
+var current_dialog = []
+var in_dialog = false
+var dialog_index = 0
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -38,40 +43,59 @@ func _ready() -> void:
 	
 	player = map_data["player"]
 	collidable = map_data["collidable"]
+	interactable = map_data["interactable"]
+	dialogs = map_data["dialog"]
 	
 	map[player_pos.y][player_pos.x] = player
 	
-	$FacingLabel.text = FACING
 	update_map()
+	update_facing()
+	$DialogBox.hide()
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(_delta: float) -> void:
-	var input_dir = Vector2.ZERO
-	if Input.is_action_just_pressed(UP): input_dir.y = -1
-	if Input.is_action_just_pressed(DOWN): input_dir.y = 1
-	if Input.is_action_just_pressed(LEFT): input_dir.x = -1
-	if Input.is_action_just_pressed(RIGHT): input_dir.x = 1
-	
-	if input_dir != Vector2.ZERO:
-		facing_dir = input_dir
-		update_facing()
-	
-	if Input.is_action_just_pressed(ACTION1):
-		update_player()
-	
 	$Camera.position = lerp($Camera.position, camera_target, camera_smoothing)
+	if in_dialog:
+		if Input.is_action_just_pressed(ACTION1):
+			next_dialog()
+			return
+	else:
+		var input_dir = Vector2.ZERO
+		if Input.is_action_just_pressed(UP): input_dir.y = -1
+		if Input.is_action_just_pressed(DOWN): input_dir.y = 1
+		if Input.is_action_just_pressed(LEFT): input_dir.x = -1
+		if Input.is_action_just_pressed(RIGHT): input_dir.x = 1
+		
+		if input_dir != Vector2.ZERO:
+			facing_dir = input_dir
+			update_facing()
+		
+		if Input.is_action_just_pressed(ACTION1):
+			update_player()
 
 func update_player():
-	map[player_pos.y][player_pos.x] = init_map[player_pos.y][player_pos.x]
-	player_pos += facing_dir
-	if collidable.has(map[player_pos.y][player_pos.x]):
-		player_pos -= facing_dir
-	camera_target = player_pos * 64 + Vector2(32, 32)
-	map[player_pos.y][player_pos.x] = player
-	update_map()
-	update_facing()
+	var target_pos = player_pos + facing_dir
+	var target_tile = map[target_pos.y][target_pos.x]
+	if walkable(target_tile):
+		map[player_pos.y][player_pos.x] = init_map[player_pos.y][player_pos.x]
+		player_pos = target_pos
+		map[player_pos.y][player_pos.x] = player
+		camera_target = player_pos * 64 + Vector2(32, 32)
+		update_map()
+		update_facing()
+		print(player_pos)
+	if interactable.has(target_tile):
+		in_dialog = true
+		current_dialog = dialogs[target_pos]
+		dialog_index = -1
+		$DialogBox.position = (target_pos + Vector2(1, -1)) * 64
+		$DialogBox.show()
+		next_dialog()
 
 func update_facing():
+	if facing_dir == Vector2.ZERO: 
+		$FacingLabel.text = ""
+		return
 	var target_tile = map[player_pos.y+facing_dir.y][player_pos.x+facing_dir.x]
 	var replacement = ["  ", "  ", "  ", "  "]
 	var angles = [180, 90, -90, 0]
@@ -84,7 +108,8 @@ func update_facing():
 	
 	$FacingLabel.rotation = 0
 	var indicator = ""
-	if collidable.has(target_tile): indicator = "ala"
+	if interactable.has(target_tile): indicator = "toki"
+	elif collidable.has(target_tile): indicator = "ala"
 	else:
 		indicator = "ni"
 		$FacingLabel.rotation = radians(angles[dir])
@@ -110,5 +135,17 @@ func update_map():
 	$Map.position = camera_target - visible_radius*64
 	$FacingLabel.position = camera_target - Vector2.ONE * 64
 
+func next_dialog():
+	dialog_index += 1
+	if dialog_index >= current_dialog.size():
+		in_dialog = false
+		current_dialog = []
+		$DialogBox.hide()
+		return
+	$DialogBox/Dialog.text = current_dialog[dialog_index]
+
 func radians(deg: float) -> float:
 	return deg * PI/180
+
+func walkable(tile: int):
+	return !(collidable.has(tile) || interactable.has(tile))
