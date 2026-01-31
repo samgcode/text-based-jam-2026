@@ -8,6 +8,8 @@ const DOWN = "down"
 const LEFT = "left"
 const RIGHT = "right"
 
+const visible_radius = Vector2(13, 8);
+
 var types = {}
 
 var init_map;
@@ -16,6 +18,7 @@ var map_height;
 var map_width;
 
 var player;
+var collidable;
 
 var player_pos: Vector2 = Vector2(2, 2)
 var camera_target: Vector2 = Vector2(0, 0)
@@ -28,7 +31,9 @@ func _ready() -> void:
 	map = init_map.duplicate(true)
 	map_height = map.size()
 	map_width = map[0].size()
+	
 	player = map_data["player"]
+	collidable = map_data["collidable"]
 	
 	map[player_pos.y][player_pos.x] = player
 	update_map()
@@ -51,7 +56,7 @@ func _process(delta: float) -> void:
 func update_player(input_dir: Vector2):
 	map[player_pos.y][player_pos.x] = init_map[player_pos.y][player_pos.x]
 	player_pos += input_dir
-	if map[player_pos.y][player_pos.x] != 0:
+	if collidable.has(map[player_pos.y][player_pos.x]):
 		player_pos -= input_dir
 	camera_target = player_pos * 64 + Vector2(32, 32)
 	map[player_pos.y][player_pos.x] = player
@@ -59,9 +64,9 @@ func update_player(input_dir: Vector2):
 
 func update_map():
 	var map_text: String = ""
-	for row in range(0, map.size()):
-		for col in range(0, map[row].size()):
-			var tile = map[row][col]
+	for row in range(player_pos.y-visible_radius.y, player_pos.y+visible_radius.y):
+		for col in range(player_pos.x-visible_radius.x, player_pos.x+visible_radius.x):
+			var tile = map[row%map_height][col%map_width]
 			if types.has(tile):
 				map_text += types[tile]
 			else:
@@ -71,3 +76,4 @@ func update_map():
 		map_text += "\n"
 	
 	$Map.text = map_text
+	$Map.position = camera_target - visible_radius*64
