@@ -25,8 +25,8 @@ var collidable;
 var interactable;
 var dialogs;
 
-var player_pos = Vector2(2, 2)
-var camera_target = Vector2(128, 128)
+var player_pos = Vector2(5, 5)
+var camera_target = player_pos * 64 + Vector2(32, 32)
 var facing_dir = Vector2(0, 0)
 var current_dialog = []
 var in_dialog = false
@@ -51,6 +51,7 @@ func _ready() -> void:
 	update_map()
 	update_facing()
 	$DialogBox.hide()
+	$Camera.position = camera_target
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(_delta: float) -> void:
