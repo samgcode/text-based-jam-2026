@@ -1,5 +1,7 @@
 extends Node
 
+var temp = 'ඞ' # temporary character for use in regex operations
+
 func load_map(path: String) -> Dictionary:
 	var file = FileAccess.open(path, FileAccess.READ)
 	var content = file.get_as_text()
@@ -11,20 +13,29 @@ func load_map(path: String) -> Dictionary:
 		"player": 0,
 		"collidable": [],
 		"interactable": [],
-		"dialog": {}
+		"dialog": {},
+		"multi_dialog": {}
 	}
 	
 	var types = false
 	var map = false
 	var map_start = 0;
 	var dialog = false
+	var multi_dialog = false
 	var current_dialog = Vector2.ZERO
 	for i in range(0, lines.size()):
 		var line = lines[i]
+		var in_dialog = dialog || multi_dialog
 		line = replace_regex(line, r'\/\/.*', "") # remove comments
-		line = replace_regex(line, r'[ \t]', "") # remove whitespace
+		if in_dialog:
+			line = line.replace("  ", temp)
+			line = replace_regex(line, r'[ \t]*', "|")
+			line = line.replace(temp, "  ")
+		else:
+			line = replace_regex(line, r'[ \t]', "") # remove whitespace
+		
 		lines[i] = line
-		var in_section = types || map || dialog
+		var in_section = types || map || in_dialog
 		
 		match line:
 			"": continue
@@ -32,7 +43,7 @@ func load_map(path: String) -> Dictionary:
 			"/types": types = false; continue
 			"map:": map = true; map_start = i + 1; continue
 			"/map": map = false; continue
-			"/dialog": dialog = false; continue
+			"/dialog": dialog = false; multi_dialog = false; continue
 			_:
 				if !in_section:
 					var property = lines[i].split(":")
@@ -44,9 +55,20 @@ func load_map(path: String) -> Dictionary:
 						"interactable":
 							map_data["interactable"] = array_to_int(property[1].split(","))
 						"dialog": 
-							dialog = true
-							current_dialog = array_to_vec2(property[1].split("),("))[0]
-							map_data["dialog"][current_dialog] = []
+							current_dialog = array_to_int(
+								property[1].replace("(", "").replace(")", "")
+								.split(","))
+							if current_dialog.size() == 1:
+								multi_dialog = true
+								current_dialog = current_dialog[0]
+								map_data["multi_dialog"][current_dialog] = []
+							elif current_dialog.size() == 2:
+								dialog = true
+								current_dialog = Vector2(current_dialog[0], current_dialog[1])
+								map_data["dialog"][current_dialog] = []
+							else:
+								error("expected (x,y) or ## for dialog location", i)
+							
 						_: error("Property %s not defined" % property[0], i)
 					continue
 		
@@ -67,10 +89,22 @@ func load_map(path: String) -> Dictionary:
 						error("non number value in map", i)
 					else:
 						map_data["map"][y].append(tile.to_int())
-		elif dialog:
-			map_data["dialog"][current_dialog].append(line)
+		elif in_dialog:
+			if line[0] == ">":
+				map_data[
+					"dialog" if dialog else "multi_dialog"
+				][current_dialog].append({ 
+					"action": line.replace(">", "").split("|")
+				})
+			else:
+				map_data[
+					"dialog" if dialog else "multi_dialog"
+				][current_dialog].append({ 
+					"text": line
+				})
 		else:
 			error("no handling for line", i)
+	
 	return map_data
 
 # https://regexr.com/ (use PCRE engine)
@@ -82,8 +116,8 @@ func replace_regex(string: String, regex: String, replacement: String) -> String
 	return string_
 
 func split_regex(string: String, regex: String) -> Array:
-	var string_ = replace_regex(string, regex, 'ඞ')
-	return string_.split('ඞ')
+	var string_ = replace_regex(string, regex, temp)
+	return string_.split(temp)
 
 func array_to_int(arr: Array[String]) -> Array:
 	var output = []

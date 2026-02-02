@@ -24,6 +24,7 @@ var player;
 var collidable;
 var interactable;
 var dialogs;
+var multi_dialogs;
 
 var player_pos = Vector2(5, 5)
 var camera_target = player_pos * 64 + Vector2(32, 32)
@@ -45,6 +46,7 @@ func _ready() -> void:
 	collidable = map_data["collidable"]
 	interactable = map_data["interactable"]
 	dialogs = map_data["dialog"]
+	multi_dialogs = map_data["multi_dialog"]
 	
 	map[player_pos.y][player_pos.x] = player
 	
@@ -86,12 +88,23 @@ func update_player():
 		update_facing()
 		print(player_pos)
 	if interactable.has(target_tile):
-		in_dialog = true
+		handle_interactable(target_tile, target_pos)
+
+func handle_interactable(target_tile: int, target_pos: Vector2):
+	in_dialog = true
+	if dialogs.has(target_pos):
 		current_dialog = dialogs[target_pos]
-		dialog_index = -1
-		$DialogBox.position = (target_pos + Vector2(1, -1)) * 64
-		$DialogBox.show()
-		next_dialog()
+	elif multi_dialogs.has(target_tile):
+		current_dialog = multi_dialogs[target_tile]
+	else:
+		print("ERROR: no dialog for tile %s at (%s, %s)" % [
+			target_tile, target_pos.x, target_pos.y
+		])
+	
+	dialog_index = -1
+	$DialogBox.position = (target_pos + Vector2(1, -1)) * 64
+	$DialogBox.show()
+	next_dialog()
 
 func update_facing():
 	if facing_dir == Vector2.ZERO: 
@@ -143,7 +156,34 @@ func next_dialog():
 		current_dialog = []
 		$DialogBox.hide()
 		return
-	$DialogBox/Dialog.text = current_dialog[dialog_index]
+	var line = current_dialog[dialog_index]
+	if line.has("text"):
+		$DialogBox/Dialog.text = line["text"]
+	else:
+		do_action(line["action"])
+		next_dialog()
+
+func do_action(action: Array):
+	var item = action[2].to_int()
+	match action[0]:
+		"add":
+			match action[1]:
+				"interactable": interactable.append(item)
+				"collidable": collidable.append(item)
+		"remove":
+			match action[1]:
+				"interactable": interactable = remove_item(interactable, item)
+				"collidable": collidable = remove_item(collidable, item)
+	update_facing()
+
+func remove_item(arr: Array, item):
+	var output = arr
+	var location = arr.find(item)
+	if location != -1:
+		output.remove_at(location)
+	else:
+		print("ERROR: attempt to remove item not present")
+	return output
 
 func radians(deg: float) -> float:
 	return deg * PI/180
