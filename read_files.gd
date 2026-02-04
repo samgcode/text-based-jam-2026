@@ -77,7 +77,10 @@ func load_map(path: String) -> Dictionary:
 			if !tline[0].is_valid_int():
 				error("non number value in types", i)
 			else:
-				map_data["types"][tline[0].to_int()] = tline[1]
+				if tline[1] == "#":
+					map_data["types"][tline[0].to_int()] = "  "
+				else:
+					map_data["types"][tline[0].to_int()] = tline[1]
 		elif map:
 			var row = line.bigrams()
 			map_data["map"].append([])

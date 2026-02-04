@@ -35,6 +35,9 @@ var dialog_index = 0
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
+	init()
+
+func init():
 	var map_data = read_files.load_map("res://map.txt")
 	types = map_data["types"]
 	init_map = map_data["map"]
@@ -75,6 +78,8 @@ func _process(_delta: float) -> void:
 		
 		if Input.is_action_just_pressed(ACTION1):
 			update_player()
+	if Input.is_action_just_pressed("reload"):
+		init()
 
 func update_player():
 	var target_pos = player_pos + facing_dir
